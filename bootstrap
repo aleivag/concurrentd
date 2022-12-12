@@ -1,0 +1,21 @@
+set -e
+
+export VENV=`realpath ./.venv`
+export DEBIAN=.debian
+export CACHE="$VENV/.cache"
+export PYTHON=$VENV/bin/python3
+export PACKAGE=concurrentd
+export PIP="$PYTHON -m pip --disable-pip-version-check --cache-dir=$CACHE  --quiet"
+
+mkdir -p $CACHE
+
+test -f $PYTHON || (python3 -m venv $VENV && $PYTHON -m pip install wheel)
+test -d $DEBIAN || sudo debootstrap --include dbus,vim,sl unstable $DEBIAN
+
+$PIP  uninstall --quiet --no-input -y --require-virtualenv $PACKAGE
+
+rm -rf dist/*
+$PYTHON setup.py bdist_wheel &>/dev/null
+$PIP install dist/*.whl
+
+
