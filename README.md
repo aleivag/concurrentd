@@ -1,14 +1,14 @@
 concurrentd
 -------------
 
-Ever wanted to run a peace of code in a "more restricted environment"?, _a la container_... for instance, ever wanted tp run a method, but
+Ever wanted to run a section of your code in a "more restricted environment"?, maybe _a la container_... for instance, ever wanted to run a method, but
 not allow it to access the internet, or to not be able to write data, or to limit the amount of cpu a single python
-method can take?... well I have... and I made multiprocessd just for that
+method can take?... well I have... so I made concurrentd just for that
 
 
 show don't tell
 ================
-In coding as in screenplay writing, the logix is show not tell. so here are a couple of practical examples
+In coding as in screenplay writing, the logic is show not tell. So here are a couple of practical examples
 
 let's assume you want to execute a method, but want that method to run as a different user, using only 20% of CPU,
 with no network access, and having the entire filesystem as read only (except for tmp), then this code will get you there
