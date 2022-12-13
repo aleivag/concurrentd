@@ -1,4 +1,4 @@
-multiprocessd
+concurrentd
 -------------
 
 Ever wanted to run a peace of code in a "more restricted environment"?, _a la container_... for instance, ever wanted tp run a method, but
@@ -16,7 +16,7 @@ with no network access, and having the entire filesystem as read only (except fo
 
 ```python
 import time
-from multiprocessd import TransientUnitPoolExecutor
+from concurrentd.transient import TransientUnitPoolExecutor
 
 
 def busy_cpu(timeout):
