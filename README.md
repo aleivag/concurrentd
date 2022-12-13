@@ -16,7 +16,7 @@ with no network access, and having the entire filesystem as read only (except fo
 
 ```python
 import time
-from multiprocessd import NSProcessPoolExecutor
+from multiprocessd import TransientUnitPoolExecutor
 
 
 def busy_cpu(timeout):
@@ -26,7 +26,7 @@ def busy_cpu(timeout):
         2**64 -1
     
 if __name__ == "__main__":
-    with NSProcessPoolExecutor(ns_options={
+    with TransientUnitPoolExecutor(ns_options={
         "PrivateTmp": True, # mounts /tmp unique to the process
         "PrivateNetwork": True, # disable network
         "CPUQuota": 0.2, # only use 20% of CPU
@@ -34,23 +34,31 @@ if __name__ == "__main__":
         "User": "nobody" # runs code a nobody
     }) as pool:
         print('bootstrap unit', pool.unit.Id.decode())
-        pool.submit(busy_cpu, timeout=2)
-        pool.submit(busy_cpu, timeout=3)
+        pool.submit(busy_cpu, timeout=5)
+        pool.submit(busy_cpu, timeout=10)
+        pool.submit(busy_cpu, timeout=15)
 
 ```
 
-with this, restricted_method will be executed on an environment that cant use more than 20% of CPU 
+with this, restricted_method will be executed by the user nobody ([User](https://www.freedesktop.org/software/systemd/man/systemd.exec.html#User=)="nobody") on an environment that can't use more than 20% of CPU 
 ([CPUQuota](https://www.freedesktop.org/software/systemd/man/systemd.resource-control.html#CPUQuota=)=0.2), 
 with no network ([PrivateNetwork](https://www.freedesktop.org/software/systemd/man/systemd.exec.html#PrivateNetwork=)=True
-executes the code with only the loopback network interface), with the os mounted as read only
-([ProtectSystem](https://www.freedesktop.org/software/systemd/man/systemd.exec.html#ProtectSystem=)=strict) 
+executes the code with only the loopback network interface), with root mounted as read only
+([ProtectSystem](https://www.freedesktop.org/software/systemd/man/systemd.exec.html#ProtectSystem=)=strict) and a private view /tmp ([PrivateTmp](https://www.freedesktop.org/software/systemd/man/systemd.exec.html#PrivateTmp=)=True)that will get clean as soon as the executor has finish 
 
 
 How does this works?
 ====================
 
-very simple we use systemd, namespaces and cgroups to execute your code... `NSProcessPoolExecutor` works the same as
-concurrent.futures.ProcessPoolExecutor, with the only difference that when you start NSProcessPoolExecutor, it wil create 
+very simple we use systemd, namespaces and cgroups to execute your code... `TransientUnitPoolExecutor` works the same as
+concurrent.futures.ProcessPoolExecutor, with the only difference that when you start TransientUnitPoolExecutor, it wil create 
 a systemd transient unit with the ns_options you pass. Then every time you submit work to the pool executor, it will work 
-as a regular process, except that after been fork, the code is moved into the namespaces of the transient unit, the cgroup
+as a regular subprocess, except that after been fork, the code is moved into the namespaces of the transient unit, the cgroup
 and the user and group of the process will be set to the user and group of the transient unit.
+
+you can specify most options in [systemd.directives](https://www.freedesktop.org/software/systemd/man/systemd.directives.html).
+
+What u need:
+============
+* Run as root
+* Systemd
